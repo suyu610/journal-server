@@ -1,0 +1,51 @@
+server:
+  port: 5666
+  servlet:
+    context-path: /api
+spring:
+  application:
+    name: journal
+  profiles:
+      active: test
+  data:
+    redis:
+      database: 3
+      host: 127.0.0.1
+      timeout: 20000
+      port: 6379
+      jedis:
+        pool:
+          max-active: 1000
+          max-wait: 100s
+          max-idle: 1000
+          min-idle: 1000
+
+jwt:
+  accessTokenExpireTime: P30D
+  refreshTokenExpireAppTime: P30D
+  refreshTokenExpireTime: P30D
+  issuer: com.uuorb.journal
+
+mybatis:
+  mapper-locations: classpath*:mapper/*Mapper.xml
+  type-aliases-package: com.uuorb.journal
+  configuration-properties:
+    org.apache.ibatis.parsing.PropertyParser.enable-default-value: true
+  configuration:
+    use-generated-keys: true
+    # 转驼峰
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+
+logging:
+  level:
+    com.uuorb.journal:
+      mapper: error
+
+# 分页配置
+pagehelper:
+  helper-dialect: mysql
+  reasonable: true
+  support-methods-arguments: true
+  params: count=countSql
+

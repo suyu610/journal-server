@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uuorb.journal.mapper.ExpenseMapper">
+    <update id="update">
+        UPDATE expense
+        <trim prefix="set" suffixOverrides=",">
+
+            <if test="expenseTime != null">
+                expense_time = #{expenseTime},
+            </if>
+
+            <if test="positive != null">
+                positive = #{positive},
+            </if>
+            <if test="type != null">
+                type = #{type},
+            </if>
+            <if test="price != null">
+                price = #{price},
+            </if>
+            <if test="label != null and label != ''">
+                label = #{label},
+            </if>
+        </trim>
+        where expense_id = #{expenseId} AND activity_id = #{activityId}
+    </update>
+
+    <select id="queryById" resultType="com.uuorb.journal.model.Expense">
+        SELECT expense.*,
+               users.nickname as userNickname,
+               users.avatar_url as userAvatar
+        FROM expense
+                 LEFT JOIN users ON users.user_id = expense.user_id
+        WHERE expense.expense_id = #{expenseId} LIMIT 1
+
+    </select>
+
+    <select id="queryList" resultType="com.uuorb.journal.model.Expense">
+        SELECT expense.*,
+               users.nickname as userNickname,
+               users.avatar_url as userAvatar
+        FROM expense
+                 LEFT JOIN users ON users.user_id = expense.user_id
+        WHERE expense.activity_id = #{activityId}
+        ORDER BY expense.expense_time desc
+    </select>
+
+<select id="queryListBrief" resultType="com.uuorb.journal.model.EngelExpense">
+    SELECT *
+    FROM expense
+    WHERE expense.activity_id = #{activityId}
+      AND positive = 0
+</select>
+
+    <insert id="insert" keyProperty="id" useGeneratedKeys="true">
+        INSERT INTO expense(expense_id, type, price, label, user_id, activity_id,positive,expense_time)
+        VALUES (#{expenseId}, #{type}, #{price}, #{label}, #{userId}, #{activityId},#{positive},#{expenseTime})
+    </insert>
+</mapper>

@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uuorb.journal.mapper.ActivityMapper">
+
+    <resultMap id="activity" type="com.uuorb.journal.model.Activity">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="activityId" column="activity_id"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="activityName" column="activity_name"/>
+        <result property="totalExpense" column="total_expense" javaType="BigDecimal"/>
+        <result property="totalIncome" column="total_income" javaType="BigDecimal"/>
+        <result property="budget" column="budget" javaType="BigDecimal"/>
+        <result property="remainingBudget" column="remaining_budget" javaType="BigDecimal"/>
+        <result property="activated" column="activated"/>
+        <result property="creatorName" column="creatorName"/>
+        <collection property="userList" ofType="com.uuorb.journal.model.User">
+            <id column="UID" property="id"/>
+            <result column="u_userId" property="userId"/>
+            <result column="u_telephone" property="telephone"/>
+            <result column="nickname" property="nickname"/>
+            <result column="avatarUrl" property="avatarUrl"/>
+            <result column="openid" property="openid"/>
+            <result column="unionId" property="unionId"/>
+            <result column="vip" property="vip"/>
+            <result column="vipExpireTime" property="vipExpireTime"/>
+            <result column="lastLoginTime" property="lastLoginTime"/>
+            <result column="u_createTime" property="createTime"/>
+            <result column="u_updateTime" property="updateTime"/>
+            <result column="u_currentActivityId" property="currentActivityId"/>
+        </collection>
+        <collection property="expenseList" ofType="com.uuorb.journal.model.Expense" column="activity_id"
+                    select="selectExpensesByActivityId"/>
+    </resultMap>
+
+    <select id="selectExpensesByActivityId" resultType="com.uuorb.journal.model.Expense">
+        SELECT expense.id,
+               expense_id,
+               expense.positive as positive,
+               type,
+               price,
+               label,
+               expense.user_id,
+               activity_id,
+               expense.expense_time,
+               expense.create_time,
+               expense.update_time,
+               users.avatar_url as userAvatar,
+               users.nickname   as userNickname
+        FROM expense
+                 LEFT JOIN users ON users.user_id = expense.user_id
+        WHERE activity_id = #{activityId}
+        ORDER BY id DESC
+        LIMIT 3
+    </select>
+    <sql id="base">
+        SELECT activity.id,
+               activity.user_id,
+               activity.activity_id,
+               activity.create_time,
+               activity.update_time,
+               activity.activity_name,
+               activity.budget,
+               activity.remaining_budget,
+               activity.activated,
+               (SELECT nickname FROM users u WHERE u.user_id = activity.user_id) as creatorName,
+               users.id                                                          as UID,
+               users.user_id                                                     as u_userId,
+               users.nickname,
+               users.avatar_url                                                  as avatarUrl,
+               users.openid,
+               users.union_id                                                    as unionId,
+               users.telephone                                                   as u_telephone,
+               users.current_activity_id                                         as u_currentActivityId,
+               users.vip,
+               users.vip_expire_time                                             as vipExpireTime,
+               users.last_login_time                                             as lastLoginTime,
+               users.create_time                                                 as u_createTime,
+               users.update_time                                                 as u_updateTime,
+               (SELECT SUM(price)
+                FROM expense
+                WHERE expense.activity_id = activity.activity_id AND expense.positive = 0 )                as total_expense,
+               (SELECT SUM(price)
+                FROM expense
+                WHERE expense.activity_id = activity.activity_id AND expense.positive = 1 )                as total_income
+    </sql>
+
+    <select id="queryActivityByActivityId" resultMap="activity">
+        <include refid="base"/>
+        FROM activity
+        LEFT JOIN activity_user_rel aur ON activity.activity_id = aur.activity_id
+        LEFT JOIN users users ON aur.user_id = users.user_id
+        WHERE activity.activity_id = #{activityId}
+    </select>
+
+    <select id="querySelfActivityList" resultMap="activity"
+            parameterType="com.uuorb.journal.model.Activity">
+        <include refid="base"/>
+        FROM activity
+        LEFT JOIN activity_user_rel aur ON activity.activity_id = aur.activity_id
+        LEFT JOIN users users ON aur.user_id = users.user_id
+        WHERE activity.user_id = #{userId}
+        ORDER BY
+        activity.create_time DESC;
+    </select>
+    <select id="getCurrentActivity" resultMap="activity">
+        <include refid="base"/>
+        FROM activity
+        LEFT JOIN activity_user_rel aur ON activity.activity_id = aur.activity_id
+        LEFT JOIN users users ON aur.user_id = users.user_id
+        WHERE activity.activity_id = (SELECT current_activity_id FROM users WHERE users.user_id = #{userId})
+    </select>
+    <select id="queryJoinedActivityList" resultMap="activity" parameterType="com.uuorb.journal.model.Activity">
+        <include refid="base"/>
+        FROM activity
+        LEFT JOIN activity_user_rel aur ON activity.activity_id = aur.activity_id
+        LEFT JOIN users users ON aur.user_id = users.user_id
+        WHERE activity.activity_id in (select activity_id from activity_user_rel where user_id = #{userId} ) and
+        activity.user_id != #{userId}
+        ORDER BY
+        activity.create_time;
+    </select>
+
+    <select id="isOwner" resultType="java.lang.Boolean">
+        SELECT COUNT(*)
+        FROM activity
+        WHERE activity_id = #{activityId}
+          AND user_id = #{userId}
+    </select>
+    <select id="isJoinedOwner" resultType="java.lang.Boolean">
+        SELECT COUNT(*)
+        FROM activity_user_rel
+        WHERE activity_id = #{activityId}
+          AND user_id = #{userId}
+    </select>
+
+    <update id="updateAllInActive">
+        update activity
+        SET activated = 0
+        WHERE user_id = #{userId}
+          AND activity_id != #{activityId}
+    </update>
+
+    <update id="updateActivity" parameterType="com.uuorb.journal.model.Activity">
+        UPDATE activity
+        <trim prefix="set" suffixOverrides=",">
+            <if test="budget != null">
+                budget = #{budget},
+            </if>
+            <if test="remainingBudget != null">
+                remaining_budget = #{remainingBudget},
+            </if>
+            <if test="activityName != null and activityName != ''">
+                activity_name = #{activityName},
+            </if>
+            <if test="activated != null">
+                activated = #{activated},
+            </if>
+        </trim>
+        where activity_id = #{activityId}
+    </update>
+
+    <update id="refreshActivityRemainingBudget">
+        UPDATE activity
+        SET remaining_budget = (budget
+                                    -
+                                COALESCE((SELECT SUM(price)
+                                          FROM expense
+                                          WHERE expense.activity_id = #{activityId} AND expense.positive = 0),0)
+            + COALESCE((SELECT SUM(price) FROM expense WHERE expense.activity_id = #{activityId} AND expense.positive = 1)
+                                    ,0))
+        WHERE activity_id = #{activityId}
+    </update>
+
+    <insert id="insert" parameterType="com.uuorb.journal.model.Activity" keyProperty="id" useGeneratedKeys="true">
+        INSERT INTO activity(activity_id, activity_name, budget, user_id, remaining_budget)
+        VALUES (#{activityId}, #{activityName}, #{budget}, #{userId}, #{remainingBudget});
+    </insert>
+
+    <insert id="joinActivity" parameterType="com.uuorb.journal.model.ActivityUserRel" keyProperty="id"
+            useGeneratedKeys="true">
+        INSERT INTO activity_user_rel(activity_id, user_id)
+        VALUES (#{activityId}, #{userId})
+    </insert>
+</mapper>

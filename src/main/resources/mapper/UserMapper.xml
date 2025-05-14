@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uuorb.journal.mapper.UserMapper">
+
+    <resultMap id="user" type="com.uuorb.journal.model.User">
+        <id property="id" column="id"/>
+        <result column="userId" property="userId"/>
+        <result column="telephone" property="telephone"/>
+        <result column="nickname" property="nickname"/>
+        <result column="avatarUrl" property="avatarUrl"/>
+        <result column="openid" property="openid"/>
+        <result column="unionId" property="unionId"/>
+        <result column="vip" property="vip"/>
+        <result column="ai_avatar_url" property="aiAvatarUrl"/>
+        <result column="vipExpireTime" property="vipExpireTime"/>
+        <result column="currentActivityId" property="currentActivityId"/>
+        <result column="openingStatement" property="openingStatement"/>
+        <result column="salutation" property="salutation"/>
+        <result column="relationship" property="relationship"/>
+        <result column="personality" property="personality"/>
+        <result column="lastLoginTime" property="lastLoginTime"/>
+        <result column="createTime" property="createTime"/>
+        <result column="updateTime" property="updateTime"/>
+    </resultMap>
+
+    <sql id="base">
+        SELECT users.id                  as UID,
+               users.ai_avatar_url       as aiAvatarUrl,
+               users.user_id             as userId,
+               users.nickname,
+               users.avatar_url          as avatarUrl,
+               users.openid,
+               users.union_id            as unionId,
+               users.telephone           as telephone,
+               users.vip,
+               users.vip_expire_time     as vipExpireTime,
+               users.last_login_time     as lastLoginTime,
+               users.current_activity_id as currentActivityId,
+               users.opening_statement   as openingStatement,
+               users.salutation,
+               users.relationship,
+               users.personality,
+               users.create_time         as createTime,
+               users.update_time         as updateTime
+    </sql>
+    <insert id="createUser" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO users(user_id, nickname, telephone,openid,union_id,apple_id)
+        VALUES (#{userId}, #{nickname}, #{telephone},#{openid},#{unionId},#{appleId})
+    </insert>
+
+    <select id="selectUser" resultMap="user">
+        <include refid="base"/>
+        FROM users
+        <where>
+            <if test="telephone != '' and telephone != null">telephone = #{telephone}</if>
+            <if test="openid != '' and openid != null">openid = #{openid}</if>
+            <if test="unionId != '' and unionId != null">union_id = #{unionId}</if>
+            <if test="appleId != '' and appleId != null">apple_id = #{appleId}</if>
+        </where>
+    </select>
+
+    <update id="updateUser" parameterType="com.uuorb.journal.model.User">
+        UPDATE users
+        <trim prefix="set" suffixOverrides=",">
+            <if test="avatarUrl != null">
+                avatar_url = #{avatarUrl},
+            </if>
+            <if test="aiAvatarUrl != null">
+                ai_avatar_url = #{aiAvatarUrl},
+            </if>
+
+
+            <if test="nickname != null">
+                nickname = #{nickname},
+            </if>
+            <if test="currentActivityId != null">
+                current_activity_id = #{currentActivityId},
+            </if>
+            <if test="openingStatement != null">
+                opening_statement = #{openingStatement},
+            </if>
+            <if test="salutation != null">
+                salutation = #{salutation},
+            </if>
+            <if test="relationship != null">
+                relationship = #{relationship},
+            </if>
+            <if test="personality != null">
+                personality = #{personality},
+            </if>
+        </trim>
+        where user_id = #{userId}
+    </update>
+</mapper>

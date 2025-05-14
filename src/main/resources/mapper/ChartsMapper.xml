@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.uuorb.journal.mapper.ChartsMapper">
+    <select id="queryWeekly" resultType="com.uuorb.journal.controller.vo.ChartsDataNode">
+        SELECT DAYOFWEEK(create_time) AS NAME,
+#                CASE DAYOFWEEK(create_time)
+#                    WHEN 2 THEN '周一'
+#                    WHEN 3 THEN '周二'
+#                    WHEN 4 THEN '周三'
+#                    WHEN 5 THEN '周四'
+#                    WHEN 6 THEN '周五'
+#                    WHEN 7 THEN '周六'
+#                    WHEN 1 THEN '周日'
+#                    END               AS NAME,
+               IFNULL(SUM(price), 0) AS VALUE
+        FROM expense
+        WHERE activity_id = #{activityId}
+          AND create_time >= DATE_SUB(NOW(), INTERVAL 1 WEEK)
+          AND positive = 0
+        GROUP BY DAYOFWEEK(create_time)
+        ORDER BY DAYOFWEEK(create_time)
+    </select>
+
+    <select id="queryWeeklyIncome" resultType="com.uuorb.journal.controller.vo.ChartsDataNode">
+        SELECT CASE
+                   WHEN
+                       DAYOFWEEK(create_time) = 2 THEN
+                       '周一'
+                   WHEN DAYOFWEEK(create_time) = 3 THEN
+                       '周二'
+                   WHEN DAYOFWEEK(create_time) = 4 THEN
+                       '周三'
+                   WHEN DAYOFWEEK(create_time) = 5 THEN
+                       '周四'
+                   WHEN DAYOFWEEK(create_time) = 6 THEN
+                       '周五'
+                   WHEN DAYOFWEEK(create_time) = 7 THEN
+                       '周六'
+                   WHEN DAYOFWEEK(create_time) = 1 THEN
+                       '周日'
+                   END               AS NAME,
+               IFNULL(SUM(price), 0) AS
+                                        VALUE
+        FROM expense
+        WHERE activity_id = #{activityId}
+          AND create_time >= DATE_SUB(NOW(), INTERVAL 1 WEEK)
+          AND positive = 1
+        GROUP BY NAME
+#         ORDER BY DAYOFWEEK(create_time);
+    </select>
+
+
+    <select id="queryGroupByType" resultType="com.uuorb.journal.controller.vo.ChartsDataNode">
+        SELECT type       AS NAME,
+               SUM(price) AS VALUE
+        FROM expense
+        WHERE activity_id = #{activityId}
+          AND create_time >= DATE_SUB(NOW(), INTERVAL 1 WEEK)
+        AND positive = 0
+        GROUP BY type
+#         ORDER BY DAYOFWEEK(create_time);
+    </select>
+</mapper>

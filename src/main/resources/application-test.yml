@@ -1,0 +1,32 @@
+spring:
+  datasource:
+    username: username
+    url: jdbc:mysql://[url:port]/journal?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&allowMultiQueries=true
+    password: password
+jwt:
+  secretKey: secretKey
+
+kimi:
+  key: kimiKey
+
+coze:
+  token: cozeToken
+
+apple:
+  key: appleKey
+
+tencent:
+  sms:
+    secretId: secretId
+    secretKey: secretKey
+  cloud:
+    # 腾讯云cos
+    secretId: secretId
+    secretKey: secretKey
+    region: ap-beijing
+    bucket: bucket
+    allowPrefix: "journal*"
+  wechat:
+    open:
+      appid: appid
+      secret: secret
